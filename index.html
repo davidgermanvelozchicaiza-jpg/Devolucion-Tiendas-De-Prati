@@ -356,31 +356,80 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
   border-top:2px solid #e0e0e0;
   z-index:300;
   box-shadow:0 -4px 16px rgba(0,0,0,.1);
+  height:58px;
 }
 .mobile-bottom-nav button{
   flex:1;
   background:none;
   border:none;
-  padding:8px 4px 10px;
+  padding:6px 4px 8px;
   display:flex;
   flex-direction:column;
   align-items:center;
-  gap:2px;
+  justify-content:center;
+  gap:3px;
   cursor:pointer;
   font-family:'Nunito',sans-serif;
-  font-size:.6rem;
+  font-size:.72rem;
   font-weight:700;
   color:#777;
   transition:all .2s;
+  height:100%;
 }
-.mobile-bottom-nav button .mbn-ic{font-size:1.3rem;line-height:1;}
+.mobile-bottom-nav button .mbn-ic{font-size:1.5rem;line-height:1;}
 .mobile-bottom-nav button.act{color:var(--rojo);}
-.mobile-bottom-nav button.act .mbn-ic{transform:scale(1.15);}
+.mobile-bottom-nav button.act .mbn-ic{transform:scale(1.1);}
+
+/* SUBMENU SUBPESTAÑAS */
+.mbn-submenu{
+  display:none;
+  position:fixed;
+  bottom:58px;left:0;right:0;
+  background:#fff;
+  border-top:3px solid var(--rojo);
+  z-index:299;
+  box-shadow:0 -6px 28px rgba(204,0,0,.18);
+  flex-direction:column;
+  padding:10px 14px 12px;
+  gap:7px;
+}
+.mbn-submenu.show{display:flex;}
+.mbn-submenu-title{font-size:.72rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+.mbn-sub-btn{
+  background:#fafafa;
+  border:2px solid #e8e8e8;
+  border-radius:12px;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:13px;
+  cursor:pointer;
+  font-family:'Nunito',sans-serif;
+  font-size:.92rem;
+  font-weight:700;
+  color:#333;
+  transition:all .18s;
+  -webkit-tap-highlight-color:transparent;
+}
+.mbn-sub-btn:active{background:#fff0f0;border-color:var(--rojo);color:var(--rojo);transform:scale(.98);}
+.mbn-sub-btn.act{background:#fff0f0;border-color:var(--rojo);color:var(--rojo);}
+.mbn-sub-btn .sub-ic{font-size:1.4rem;flex-shrink:0;}
+.mbn-sub-btn .sub-lbl{flex:1;}
+.mbn-sub-btn .sub-chk{color:var(--rojo);font-size:1.1rem;}
+/* Overlay para cerrar el submenu al tocar fuera */
+.mbn-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  bottom:58px;
+  background:rgba(0,0,0,.25);
+  z-index:298;
+}
+.mbn-overlay.show{display:block;}
 
 /* Espacio para el bottom nav en móvil */
 @media (max-width: 768px){
   body{padding-bottom:64px;}
-  /* Ocultar subnav en móvil (reemplazado por bottom nav) */
   #sn{display:none !important;}
 }
 </style>
@@ -441,19 +490,38 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
   <button onclick="switchMain('cons',this)"><span class="ni">🔍</span> Consultar</button>
 </nav>
 
-<!-- BOTTOM NAV (solo móvil) -->
+<!-- OVERLAY para cerrar submenu -->
+<div class="mbn-overlay" id="mbn-overlay" onclick="closeMbnSubmenu()"></div>
+
+<!-- SUBMENU SUBPESTAÑAS -->
+<div class="mbn-submenu" id="mbn-submenu">
+  <div class="mbn-submenu-title">Selecciona una sección</div>
+  <button class="mbn-sub-btn act" id="msub-rt" onclick="mbnGoSub('rt',this)">
+    <span class="sub-ic">🏪</span>
+    <span class="sub-lbl">Revisión en Tienda</span>
+    <span class="sub-chk" id="msub-chk-rt">✓</span>
+  </button>
+  <button class="mbn-sub-btn" id="msub-dg" onclick="mbnGoSub('dg',this)">
+    <span class="sub-ic">📦</span>
+    <span class="sub-lbl">Devolución General</span>
+    <span class="sub-chk" id="msub-chk-dg" style="display:none;">✓</span>
+  </button>
+  <button class="mbn-sub-btn" id="msub-rs" onclick="mbnGoSub('rs',this)">
+    <span class="sub-ic">📅</span>
+    <span class="sub-lbl">Revisión Siguiente Semana</span>
+    <span class="sub-chk" id="msub-chk-rs" style="display:none;">✓</span>
+  </button>
+  <button class="mbn-sub-btn" id="msub-req" onclick="mbnGoSub('req',this)">
+    <span class="sub-ic">📝</span>
+    <span class="sub-lbl">Crear Requerimiento</span>
+    <span class="sub-chk" id="msub-chk-req" style="display:none;">✓</span>
+  </button>
+</div>
+
+<!-- BOTTOM NAV (solo móvil) — 2 botones principales -->
 <nav class="mobile-bottom-nav" id="mbn">
-  <button class="act" id="mbn-rt" onclick="mbnSubSwitch('rt',this)">
-    <span class="mbn-ic">🏪</span>Tienda
-  </button>
-  <button id="mbn-dg" onclick="mbnSubSwitch('dg',this)">
-    <span class="mbn-ic">📦</span>Dev.
-  </button>
-  <button id="mbn-rs" onclick="mbnSubSwitch('rs',this)">
-    <span class="mbn-ic">📅</span>Sig.Sem
-  </button>
-  <button id="mbn-req" onclick="mbnSubSwitch('req',this)">
-    <span class="mbn-ic">📝</span>Req.
+  <button class="act" id="mbn-ingr" onclick="toggleMbnSubmenu(this)">
+    <span class="mbn-ic">📋</span>Ingresar
   </button>
   <button id="mbn-cons" onclick="mbnCons(this)">
     <span class="mbn-ic">🔍</span>Consultar
@@ -2493,22 +2561,62 @@ function pasteBarcode(tab,code){
 // ─────────────────────────────────────────────
 // MOBILE BOTTOM NAV
 // ─────────────────────────────────────────────
-function mbnSubSwitch(tab, btn){
-  // Marca activo en bottom nav
-  document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
-  btn.classList.add('act');
-  // Asegura que estamos en sección Ingresar
+let _mbnSubmenuOpen = false;
+let _mbnActiveSub = 'rt';
+
+function toggleMbnSubmenu(btn){
+  if(_mbnSubmenuOpen){
+    closeMbnSubmenu();
+  } else {
+    openMbnSubmenu();
+  }
+}
+
+function openMbnSubmenu(){
+  _mbnSubmenuOpen = true;
+  document.getElementById('mbn-submenu').classList.add('show');
+  document.getElementById('mbn-overlay').classList.add('show');
+  document.getElementById('mbn-ingr').classList.add('act');
+}
+
+function closeMbnSubmenu(){
+  _mbnSubmenuOpen = false;
+  document.getElementById('mbn-submenu').classList.remove('show');
+  document.getElementById('mbn-overlay').classList.remove('show');
+}
+
+function mbnGoSub(tab, btn){
+  closeMbnSubmenu();
+  _mbnActiveSub = tab;
+
+  // Marca visualmente en el submenu
+  ['rt','dg','rs','req'].forEach(t=>{
+    const b=document.getElementById('msub-'+t);
+    const chk=document.getElementById('msub-chk-'+t);
+    if(b) b.classList.toggle('act', t===tab);
+    if(chk) chk.style.display = t===tab ? 'inline' : 'none';
+  });
+
+  // Activa sección Ingresar en nav principal
   const mainBtn=document.querySelector('.mn button:first-child');
   if(mainBtn){
     document.querySelectorAll('.mn button').forEach(b=>b.classList.remove('act'));
     mainBtn.classList.add('act');
     document.getElementById('mp-ingr').style.display='block';
     document.getElementById('mp-cons').style.display='none';
+    document.getElementById('sn').style.display='none';
   }
-  // Activa la subpestaña directamente sin necesitar el botón del sn
+
+  // Activa la subpestaña
   switchSub(tab, null);
+
+  // Mantiene "Ingresar" activo en bottom nav
+  document.getElementById('mbn-ingr').classList.add('act');
+  document.getElementById('mbn-cons').classList.remove('act');
 }
+
 function mbnCons(btn){
+  closeMbnSubmenu();
   document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
   btn.classList.add('act');
   const mainBtn=document.querySelector('.mn button:last-child');
@@ -2608,14 +2716,10 @@ function fbSync(){
 // ─────────────────────────────────────────────
 loadStorage();
 buildForm('rt');buildForm('dg');buildForm('rs');buildForm('req');
-// En móvil, asegurar que RT esté visible por defecto y bottom nav correcto
+// En móvil, RT visible por defecto
 if(window.innerWidth<=768){
   switchSub('rt', null);
-  const mbnRt=document.getElementById('mbn-rt');
-  if(mbnRt){
-    document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
-    mbnRt.classList.add('act');
-  }
+  document.getElementById('mbn-ingr')?.classList.add('act');
 }
 // Load OCR
 (()=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';document.head.appendChild(s);})();
