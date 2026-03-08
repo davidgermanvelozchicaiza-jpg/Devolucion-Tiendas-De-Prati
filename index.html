@@ -443,10 +443,7 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
 
 <!-- BOTTOM NAV (solo móvil) -->
 <nav class="mobile-bottom-nav" id="mbn">
-  <button class="act" id="mbn-ingr" onclick="mbnSwitch('ingr',this)">
-    <span class="mbn-ic">📋</span>Ingresar
-  </button>
-  <button id="mbn-rt" onclick="mbnSubSwitch('rt',this)">
+  <button class="act" id="mbn-rt" onclick="mbnSubSwitch('rt',this)">
     <span class="mbn-ic">🏪</span>Tienda
   </button>
   <button id="mbn-dg" onclick="mbnSubSwitch('dg',this)">
@@ -458,7 +455,7 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
   <button id="mbn-req" onclick="mbnSubSwitch('req',this)">
     <span class="mbn-ic">📝</span>Req.
   </button>
-  <button id="mbn-cons" onclick="mbnSwitch('cons',this)">
+  <button id="mbn-cons" onclick="mbnCons(this)">
     <span class="mbn-ic">🔍</span>Consultar
   </button>
 </nav>
@@ -638,7 +635,9 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
     <div id="cdtitle" style="font-family:'Playfair Display',serif;font-size:.95rem;color:#5b21b6;margin-bottom:9px;border-bottom:2px solid #c4b5fd;padding-bottom:5px;"></div>
     <div class="fb">
       <input type="text" id="cfs" placeholder="Filtrar semana..." oninput="filterCons()">
-      <input type="text" id="cfprov" placeholder="Filtrar proveedor..." oninput="filterCons()">
+      <select id="cfprov" onchange="filterCons()" style="min-width:160px;">
+        <option value="">Todos los proveedores</option>
+      </select>
       <select id="cft" onchange="filterCons()">
         <option value="">Todas las tiendas</option>
         <option>LUQUE</option><option>SUR</option><option>ROTONDA</option><option>QUICENTRO NORTE</option>
@@ -750,6 +749,21 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
     <button class="btn bs sm" onclick="closeOcr()"><span class="ic">✕</span> Cerrar</button>
   </div>
   <div id="ocr-status" style="color:#94a3b8;font-size:.78rem;min-height:18px;"></div>
+</div>
+
+<!-- BARCODE SCANNER OVERLAY -->
+<div id="barcode-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:950;flex-direction:column;align-items:center;justify-content:center;">
+  <div style="color:#fff;font-family:'Nunito',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:10px;text-align:center;">
+    📲 Apunta la cámara al código de barras
+  </div>
+  <div style="position:relative;width:min(340px,90vw);height:min(240px,55vw);border:3px solid #facc15;border-radius:10px;overflow:hidden;">
+    <video id="barcode-video" style="width:100%;height:100%;object-fit:cover;" playsinline autoplay muted></video>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:2px;background:rgba(250,204,21,.7);box-shadow:0 0 8px #facc15;"></div>
+  </div>
+  <div id="barcode-status" style="color:#94a3b8;font-size:.78rem;margin-top:10px;min-height:20px;text-align:center;"></div>
+  <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:center;">
+    <button onclick="closeBarcodeScanner()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-family:'Nunito',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;">✕ Cerrar</button>
+  </div>
 </div>
 
 <div class="lx" id="lx" onclick="closeLB()">
@@ -922,15 +936,32 @@ function reqStatusBadge(s){
 }
 function renderBellList(){
   const el=document.getElementById('bell-list');
-  if(!R.req.length){el.innerHTML='<p style="color:#aaa;font-size:.82rem;">Sin requerimientos.</p>';return;}
-  el.innerHTML=[...R.req].reverse().map(r=>`
-    <div class="req-item">
-      <div class="req-area">📍 ${esc(r.reqArea||'—')}</div>
+  if(!R.req.length){el.innerHTML='<p style="color:#aaa;font-size:.82rem;text-align:center;padding:10px;">Sin requerimientos.</p>';return;}
+  el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+    <button onclick="delAllNotifications()" style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:6px;padding:4px 10px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">🗑️ Limpiar todas</button>
+  </div>`+[...R.req].reverse().map(r=>`
+    <div class="req-item" id="req-notif-${r.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div class="req-area">📍 ${esc(r.reqArea||'—')}</div>
+        <button onclick="delNotification('${r.id}')" title="Eliminar notificación" style="background:none;border:none;cursor:pointer;color:#999;font-size:1rem;padding:0 2px;line-height:1;">✕</button>
+      </div>
       <div class="req-title">${esc(r.tienda||'—')} · ${esc(r.dpto||'')} · ${esc(r.codigo||'')}</div>
       <div style="font-size:.72rem;color:#555;">Semana: ${esc(r.semana||'—')} · ${esc(r.fecha||'')}</div>
       ${reqStatusBadge(r.reqStatus)}
       ${r.observaciones?`<div class="req-obs">${esc(r.observaciones)}</div>`:''}
     </div>`).join('');
+}
+
+function delNotification(id){
+  R.req=R.req.filter(r=>String(r.id)!==String(id));
+  sR();renderREQ();updateBell();renderBellList();
+  showT('🗑️ Notificación eliminada');
+}
+function delAllNotifications(){
+  if(!confirm('¿Eliminar todas las notificaciones?')) return;
+  R.req=[];
+  sR();renderREQ();updateBell();renderBellList();
+  showT('🗑️ Todas las notificaciones eliminadas');
 }
 
 // ─────────────────────────────────────────────
@@ -1050,6 +1081,7 @@ function buildForm(tab){
         <label>📸 Foto 1 — OCR + Código de Barras</label>
         <input type="file" id="${tab}-f1" accept="image/*">
         <button class="pbtn" onclick="document.getElementById('${tab}-f1').click()"><span class="ic">📷</span> Seleccionar Foto 1</button>
+        <button class="pbtn" id="${tab}-scan-btn" onclick="openBarcodeScanner('${tab}')" style="background:#0369a1;margin-top:6px;"><span class="ic">📲</span> Escanear Código</button>
         <div class="pp pp-f1" id="${tab}-p1" title="Click para OCR Lens"></div>
         <div id="${tab}-s1" style="font-size:.75rem;color:#888;margin-top:4px;"></div>
       </div>
@@ -2155,23 +2187,35 @@ function openWkC(idx){
   cWkI=idx;cRecs=JSON.parse(JSON.stringify(WK[idx].records||[]));
   document.getElementById('cdetail').style.display='block';
   document.getElementById('cdtitle').textContent=`📊 ${TLAB[WK[idx].tab]||''} — ${esc(WK[idx].nom)}`;
-  document.getElementById('cfs').value='';document.getElementById('cft').value='';
+  document.getElementById('cfs').value='';
+  document.getElementById('cft').value='';
+  // Poblar dropdown de proveedores con los que existen en este registro
+  const provSelect=document.getElementById('cfprov');
+  if(provSelect){
+    const provs=[...new Set(cRecs.map(r=>r.proveedor||'').filter(Boolean))].sort();
+    provSelect.innerHTML='<option value="">Todos los proveedores</option>'+provs.map(p=>`<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  }
   renderConsT(cRecs);
 }
 function closeCons(){document.getElementById('cdetail').style.display='none';}
 function filterCons(){
   const s=document.getElementById('cfs').value.toLowerCase();
   const t=document.getElementById('cft').value;
-  renderConsT(cRecs.filter(r=>(!s||String(r.semana||'').toLowerCase().includes(s))&&(!t||r.tienda===t)));
+  const p=document.getElementById('cfprov')?.value||'';
+  renderConsT(cRecs.filter(r=>
+    (!s||String(r.semana||'').toLowerCase().includes(s))&&
+    (!t||r.tienda===t)&&
+    (!p||r.proveedor===p)
+  ));
 }
 function getCF(){
   const s=document.getElementById('cfs').value.toLowerCase();
   const t=document.getElementById('cft').value;
-  const p=document.getElementById('cfprov')?.value.toLowerCase()||'';
+  const p=document.getElementById('cfprov')?.value||'';
   return cRecs.filter(r=>
     (!s||String(r.semana||'').toLowerCase().includes(s))&&
     (!t||r.tienda===t)&&
-    (!p||String(r.proveedor||'').toLowerCase().includes(p))
+    (!p||r.proveedor===p)
   );
 }
 
@@ -2290,6 +2334,7 @@ async function exportPDF(mode){
   if(!data.length){showT('⚠️ No hay datos');return;}
   showT('⏳ Generando PDF...');
   const IH=26;
+  const modeLabels={rt:'Revisión en Tienda',dg:'Devolución General',rs:'Revisión Siguiente Semana',req:'Requerimientos',cons:'Consulta'};
   const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
   const pW=doc.internal.pageSize.getWidth(),pH=doc.internal.pageSize.getHeight();
   const ML=7,usW=pW-ML-7;
@@ -2297,33 +2342,46 @@ async function exportPDF(mode){
   const cN=['#','Semana','Tienda','DPTO','Código','Proveedor','REF','EAN/SKU','Cant','PVP','PVP Tot','Motivo','Decisión','Observaciones','Foto'];
   const HH=7,RH=IH+3;
 
-  function drawPageHeader(doc,y){
+  function drawPageHeader(doc,y,pageNum){
+    // Título
     doc.setFontSize(13);doc.setTextColor(204,0,0);
-    doc.text('DEPRATI — REGISTRO DE NOVEDADES',ML,y);
-    doc.setFontSize(7.5);doc.setTextColor(100);
-    doc.text(`${new Date().toLocaleString('es-EC')} | ${mode.toUpperCase()}`,ML,y+6);
-    const hy=y+9;
-    let x=ML;doc.setFillColor(204,0,0);doc.setTextColor(255,255,255);doc.setFontSize(5.3);
-    cW.forEach((w,i)=>{doc.rect(x,hy,w,HH,'F');doc.text(cN[i],x+1,hy+4.4,{maxWidth:w-1});x+=w;});
+    doc.text('DEPRATI — REGISTRO DE NOVEDADES',ML,y+5);
+    doc.setFontSize(7.5);doc.setTextColor(80);
+    doc.text(`${modeLabels[mode]||mode.toUpperCase()}   |   ${new Date().toLocaleString('es-EC')}   |   Pág. ${pageNum}`,ML,y+11);
+    // Línea separadora
+    doc.setDrawColor(204,0,0);doc.setLineWidth(0.4);
+    doc.line(ML,y+13,pW-ML,y+13);
+    // Cabecera de columnas
+    const hy=y+15;
+    let x=ML;
+    doc.setFillColor(204,0,0);doc.setTextColor(255,255,255);doc.setFontSize(5.8);doc.setFont(undefined,'bold');
+    cW.forEach((w,i)=>{
+      doc.rect(x,hy,w,HH,'F');
+      doc.text(cN[i],x+1,hy+4.6,{maxWidth:w-1.5});
+      x+=w;
+    });
+    doc.setFont(undefined,'normal');
     return hy+HH;
   }
 
-  let y=drawPageHeader(doc,6);
+  let pageNum=1;
+  let y=drawPageHeader(doc,3,pageNum);
   let rn=0;
   for(const rec of sortR(data)){
     for(const ean of (rec.eans||[{ean:'',cantidad:'',pvp:''}])){
       rn++;
       if(y+RH>pH-7){
         doc.addPage();
-        y=drawPageHeader(doc,6);
+        pageNum++;
+        y=drawPageHeader(doc,3,pageNum);
       }
       const tot=(parseFloat(ean.cantidad)||0)*(parseFloat(ean.pvp)||0);
       const cells=[String(rn),rec.semana||'',rec.tienda||'',rec.dpto||'',rec.codigo||'',rec.proveedor||'',rec.ref||'',
         ean.ean||'',String(ean.cantidad||''),fPVP(ean),tot?'$'+tot.toFixed(2):'',
         (rec.motivo||'').substring(0,34),rec.decision||'',(rec.observaciones||'').substring(0,34),''];
       if(rn%2===0)doc.setFillColor(255,245,245);else doc.setFillColor(255,255,255);
-      doc.setDrawColor(218,218,218);doc.rect(ML,y,usW,RH,'FD');
-      doc.setTextColor(40);doc.setFontSize(5.6);
+      doc.setDrawColor(218,218,218);doc.setLineWidth(0.2);doc.rect(ML,y,usW,RH,'FD');
+      doc.setTextColor(40);doc.setFontSize(5.6);doc.setFont(undefined,'normal');
       let x=ML;cells.forEach((t,i)=>{doc.text(String(t),x+1,y+3.8,{maxWidth:cW[i]-1.4});x+=cW[i];});
       if(rec.foto2?.length>0){
         try{
@@ -2350,34 +2408,103 @@ function closeLB(){document.getElementById('lx').classList.remove('show');}
 function showT(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3400);}
 
 // ─────────────────────────────────────────────
-// MOBILE BOTTOM NAV
+// BARCODE SCANNER
 // ─────────────────────────────────────────────
-function mbnSwitch(page, btn){
-  // Actualiza botones del bottom nav
-  document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
-  btn.classList.add('act');
-  // Activa la pestaña principal
-  const mainBtn = page==='ingr'
-    ? document.querySelector('.mn button:first-child')
-    : document.querySelector('.mn button:last-child');
-  if(mainBtn) switchMain(page, mainBtn);
-  if(page==='ingr'){
-    // Activa subpestaña RT por defecto
-    const snBtn=document.querySelector('.sn button:first-child');
-    if(snBtn) switchSub('rt',snBtn);
-    document.getElementById('mbn-rt')?.classList.add('act');
-    btn.classList.remove('act');
+let _scanTab='', _scanStream=null, _scanInterval=null;
+
+function openBarcodeScanner(tab){
+  _scanTab=tab;
+  const overlay=document.getElementById('barcode-overlay');
+  overlay.style.display='flex';
+  const video=document.getElementById('barcode-video');
+  const status=document.getElementById('barcode-status');
+  status.textContent='⏳ Iniciando cámara...';
+
+  navigator.mediaDevices.getUserMedia({
+    video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}
+  }).then(stream=>{
+    _scanStream=stream;
+    video.srcObject=stream;
+    video.play();
+    status.textContent='🔍 Buscando código de barras...';
+
+    // Usar BarcodeDetector si está disponible (Chrome Android)
+    if('BarcodeDetector' in window){
+      const detector=new BarcodeDetector({formats:['ean_13','ean_8','code_128','code_39','upc_a','upc_e','qr_code']});
+      _scanInterval=setInterval(async()=>{
+        try{
+          const codes=await detector.detect(video);
+          if(codes.length>0){
+            const code=codes[0].rawValue;
+            closeBarcodeScanner();
+            pasteBarcode(tab,code);
+          }
+        }catch(e){}
+      },400);
+    } else {
+      // Fallback: usar canvas + ZXing si está disponible
+      status.textContent='📷 Cámara activa — usa la opción de foto si no detecta automáticamente';
+      // Cargar ZXing dinámicamente
+      if(!window.ZXing){
+        const s=document.createElement('script');
+        s.src='https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.1/umd/index.min.js';
+        s.onload=()=>startZXingScan(tab,video,status);
+        document.head.appendChild(s);
+      } else {
+        startZXingScan(tab,video,status);
+      }
+    }
+  }).catch(err=>{
+    status.textContent='⚠️ No se pudo acceder a la cámara: '+err.message;
+  });
+}
+
+function startZXingScan(tab,video,status){
+  try{
+    const codeReader=new ZXingBrowser.BrowserMultiFormatReader();
+    codeReader.decodeFromVideoElement(video).then(result=>{
+      if(result){closeBarcodeScanner();pasteBarcode(tab,result.getText());}
+    }).catch(()=>{});
+  }catch(e){
+    status.textContent='📷 Cámara activa — si no detecta, toma foto con el botón de arriba';
   }
 }
+
+function closeBarcodeScanner(){
+  if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
+  if(_scanInterval){clearInterval(_scanInterval);_scanInterval=null;}
+  const overlay=document.getElementById('barcode-overlay');
+  if(overlay) overlay.style.display='none';
+}
+
+function pasteBarcode(tab,code){
+  // Pegar en el primer campo EAN vacío
+  const eanInput=document.querySelector('#'+tab+'-el .ei');
+  if(eanInput){
+    eanInput.value=code;
+    eanInput.dispatchEvent(new Event('input'));
+  }
+  showT('✅ Código escaneado: '+code);
+}
+
+// ─────────────────────────────────────────────
+// MOBILE BOTTOM NAV
+// ─────────────────────────────────────────────
 function mbnSubSwitch(tab, btn){
   document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
   btn.classList.add('act');
   // Asegura que estamos en Ingresar
   const mainBtn=document.querySelector('.mn button:first-child');
-  if(mainBtn&&!mainBtn.classList.contains('act')) switchMain('ingr',mainBtn);
-  // Activa la subpestaña
+  if(mainBtn) switchMain('ingr', mainBtn);
+  // Activa la subpestaña correcta
   const snBtn=[...document.querySelectorAll('.sn button')].find(b=>b.getAttribute('onclick')?.includes("'"+tab+"'"));
-  if(snBtn) switchSub(tab,snBtn);
+  if(snBtn) switchSub(tab, snBtn);
+}
+function mbnCons(btn){
+  document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  const mainBtn=document.querySelector('.mn button:last-child');
+  if(mainBtn) switchMain('cons', mainBtn);
 }
 
 // ─────────────────────────────────────────────
