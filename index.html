@@ -342,59 +342,80 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
   #ocr-overlay{padding:10px;}
   .ocr-btns{gap:5px;}
   .ocr-btns .btn{font-size:.72rem;padding:7px 10px;}
-
-  /* BOTTOM NAV móvil — navegación tipo app */
-  .mobile-bottom-nav{display:flex;}
 }
 
-/* BOTTOM NAVIGATION BAR — solo móvil */
-.mobile-bottom-nav{
-  display:none;
-  position:fixed;
-  bottom:0;left:0;right:0;
-  background:#fff;
-  border-top:2px solid #e0e0e0;
-  z-index:300;
-  box-shadow:0 -4px 16px rgba(0,0,0,.1);
-  height:58px;
-}
-.mobile-bottom-nav button{
-  flex:1;
-  background:none;
-  border:none;
-  padding:6px 4px 8px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:3px;
-  cursor:pointer;
-  font-family:'Nunito',sans-serif;
-  font-size:.72rem;
-  font-weight:700;
-  color:#777;
-  transition:all .2s;
-  height:100%;
-}
-.mobile-bottom-nav button .mbn-ic{font-size:1.5rem;line-height:1;}
-.mobile-bottom-nav button.act{color:var(--rojo);}
-.mobile-bottom-nav button.act .mbn-ic{transform:scale(1.1);}
+/* ═══ BOTTOM NAV + SUBMENU — ocultos por defecto, solo móvil ═══ */
+.mobile-bottom-nav,
+.mbn-submenu,
+.mbn-overlay { display:none; }
 
-/* SUBMENU SUBPESTAÑAS */
-.mbn-submenu{
-  display:none;
-  position:fixed;
-  bottom:58px;left:0;right:0;
-  background:#fff;
-  border-top:3px solid var(--rojo);
-  z-index:299;
-  box-shadow:0 -6px 28px rgba(204,0,0,.18);
-  flex-direction:column;
-  padding:10px 14px 12px;
-  gap:7px;
+@media (max-width: 768px){
+  body{ padding-bottom:64px; }
+  #sn{ display:none !important; }
+
+  /* BARRA INFERIOR */
+  .mobile-bottom-nav{
+    display:flex !important;
+    position:fixed;
+    bottom:0; left:0; right:0;
+    background:#fff;
+    border-top:2px solid #e0e0e0;
+    z-index:1000;
+    box-shadow:0 -4px 16px rgba(0,0,0,.12);
+    height:58px;
+  }
+  .mobile-bottom-nav button{
+    flex:1;
+    background:none;
+    border:none;
+    padding:6px 4px 8px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    cursor:pointer;
+    font-family:'Nunito',sans-serif;
+    font-size:.72rem;
+    font-weight:700;
+    color:#888;
+    transition:color .2s;
+    height:100%;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .mobile-bottom-nav button .mbn-ic{ font-size:1.5rem; line-height:1; }
+  .mobile-bottom-nav button.act{ color:var(--rojo); }
+  .mobile-bottom-nav button.act .mbn-ic{ transform:scale(1.1); }
+
+  /* SUBMENU DE SUBPESTAÑAS */
+  .mbn-submenu{
+    position:fixed;
+    bottom:58px; left:0; right:0;
+    background:#fff;
+    border-top:3px solid var(--rojo);
+    z-index:999;
+    box-shadow:0 -6px 28px rgba(204,0,0,.2);
+    flex-direction:column;
+    padding:10px 14px 12px;
+    gap:7px;
+  }
+  .mbn-submenu.show{ display:flex !important; }
+
+  /* OVERLAY oscuro detrás del submenu */
+  .mbn-overlay{
+    position:fixed;
+    inset:0; bottom:58px;
+    background:rgba(0,0,0,.3);
+    z-index:998;
+  }
+  .mbn-overlay.show{ display:block !important; }
 }
-.mbn-submenu.show{display:flex;}
-.mbn-submenu-title{font-size:.72rem;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
+
+/* Estilos del submenu (visibles en cualquier tamaño para que no se rompan) */
+.mbn-submenu-title{
+  font-size:.72rem;font-weight:700;color:#999;
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;
+}
 .mbn-sub-btn{
   background:#fafafa;
   border:2px solid #e8e8e8;
@@ -410,28 +431,13 @@ tr[style*="background:#f0fdf4"]:hover td{background:#dcfce7!important;}
   color:#333;
   transition:all .18s;
   -webkit-tap-highlight-color:transparent;
+  width:100%;
 }
-.mbn-sub-btn:active{background:#fff0f0;border-color:var(--rojo);color:var(--rojo);transform:scale(.98);}
-.mbn-sub-btn.act{background:#fff0f0;border-color:var(--rojo);color:var(--rojo);}
-.mbn-sub-btn .sub-ic{font-size:1.4rem;flex-shrink:0;}
-.mbn-sub-btn .sub-lbl{flex:1;}
-.mbn-sub-btn .sub-chk{color:var(--rojo);font-size:1.1rem;}
-/* Overlay para cerrar el submenu al tocar fuera */
-.mbn-overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  bottom:58px;
-  background:rgba(0,0,0,.25);
-  z-index:298;
-}
-.mbn-overlay.show{display:block;}
-
-/* Espacio para el bottom nav en móvil */
-@media (max-width: 768px){
-  body{padding-bottom:64px;}
-  #sn{display:none !important;}
-}
+.mbn-sub-btn:active{ background:#fff0f0;border-color:var(--rojo);color:var(--rojo); }
+.mbn-sub-btn.act{ background:#fff0f0;border-color:var(--rojo);color:var(--rojo); }
+.mbn-sub-btn .sub-ic{ font-size:1.4rem;flex-shrink:0; }
+.mbn-sub-btn .sub-lbl{ flex:1; }
+.mbn-sub-btn .sub-chk{ color:var(--rojo);font-size:1.1rem; }
 </style>
 </head>
 <body>
