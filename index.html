@@ -845,13 +845,16 @@ function switchMain(p,btn){
   document.getElementById('sn').style.display=p==='ingr'?'flex':'none';
   if(p==='cons') renderConsWeeks();
 }
-function switchSub(tab,btn){
+function switchSub(tab, btn){
+  // Actualiza botones del subnav desktop (si están visibles)
   document.querySelectorAll('.sn button').forEach(b=>b.classList.remove('act'));
-  btn.classList.add('act');
+  if(btn) btn.classList.add('act');
+  // Muestra/oculta las páginas
   ['rt','dg','rs','req'].forEach(t=>{
     const el=document.getElementById('sp-'+t);
     if(el) el.style.display=tab===t?'block':'none';
   });
+  // Renderiza
   if(tab==='rt') renderRT();
   else if(tab==='dg') renderDG();
   else if(tab==='rs') renderRS();
@@ -2491,14 +2494,19 @@ function pasteBarcode(tab,code){
 // MOBILE BOTTOM NAV
 // ─────────────────────────────────────────────
 function mbnSubSwitch(tab, btn){
+  // Marca activo en bottom nav
   document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
   btn.classList.add('act');
-  // Asegura que estamos en Ingresar
+  // Asegura que estamos en sección Ingresar
   const mainBtn=document.querySelector('.mn button:first-child');
-  if(mainBtn) switchMain('ingr', mainBtn);
-  // Activa la subpestaña correcta
-  const snBtn=[...document.querySelectorAll('.sn button')].find(b=>b.getAttribute('onclick')?.includes("'"+tab+"'"));
-  if(snBtn) switchSub(tab, snBtn);
+  if(mainBtn){
+    document.querySelectorAll('.mn button').forEach(b=>b.classList.remove('act'));
+    mainBtn.classList.add('act');
+    document.getElementById('mp-ingr').style.display='block';
+    document.getElementById('mp-cons').style.display='none';
+  }
+  // Activa la subpestaña directamente sin necesitar el botón del sn
+  switchSub(tab, null);
 }
 function mbnCons(btn){
   document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
@@ -2600,6 +2608,15 @@ function fbSync(){
 // ─────────────────────────────────────────────
 loadStorage();
 buildForm('rt');buildForm('dg');buildForm('rs');buildForm('req');
+// En móvil, asegurar que RT esté visible por defecto y bottom nav correcto
+if(window.innerWidth<=768){
+  switchSub('rt', null);
+  const mbnRt=document.getElementById('mbn-rt');
+  if(mbnRt){
+    document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.remove('act'));
+    mbnRt.classList.add('act');
+  }
+}
 // Load OCR
 (()=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';document.head.appendChild(s);})();
 </script>
