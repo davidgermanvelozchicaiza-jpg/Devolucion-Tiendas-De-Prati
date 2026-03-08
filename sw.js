@@ -1,12 +1,4 @@
-const CACHE_NAME = 'deprati-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Nunito:wght@300;400;600;700&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js'
-];
+const CACHE_NAME = 'deprati-v4';  // ← incrementar esto fuerza actualización en dispositivos instalados
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -16,6 +8,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
+  // Elimina versiones anteriores del caché
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
@@ -25,14 +18,23 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Firebase y CDN: siempre de la red
+  // Firebase, CDN y APIs externas: siempre desde la red
   if (e.request.url.includes('firebase') ||
       e.request.url.includes('googleapis') ||
+      e.request.url.includes('gstatic') ||
       e.request.url.includes('cdnjs') ||
-      e.request.url.includes('gstatic')) {
+      e.request.url.includes('cdn.jsdelivr') ||
+      e.request.url.includes('zxing')) {
     return;
   }
+  // Para el resto: red primero, caché como fallback
   e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+    fetch(e.request)
+      .then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(e.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
